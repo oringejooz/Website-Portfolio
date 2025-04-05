@@ -1,23 +1,64 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { motion } from "framer-motion"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Github, Linkedin, Mail } from "lucide-react"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import Image from "next/image";
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(true)
+  const bubbleRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const velocity = useRef({ x: 1.5, y: 1.2 })
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    if (!visible) return
+
+    const bubble = bubbleRef.current
+    const section = sectionRef.current
+    if (!bubble || !section) return
+
+    let animationFrameId: number
+
+    const move = () => {
+      const bubbleRect = bubble.getBoundingClientRect()
+      const sectionRect = section.getBoundingClientRect()
+
+      let x = bubble.offsetLeft + velocity.current.x
+      let y = bubble.offsetTop + velocity.current.y
+
+      const maxX = section.clientWidth - bubble.offsetWidth
+      const maxY = section.clientHeight - bubble.offsetHeight
+
+      if (x >= maxX || x <= 0) velocity.current.x *= -1
+      if (y >= maxY || y <= 0) velocity.current.y *= -1
+
+      bubble.style.left = `${x}px`
+      bubble.style.top = `${y}px`
+
+      animationFrameId = requestAnimationFrame(move)
+    }
+
+    animationFrameId = requestAnimationFrame(move)
+
+    return () => cancelAnimationFrame(animationFrameId)
+  }, [visible])
+
   if (!mounted) return null
 
   return (
-    <section id="home" className="relative pt-32 pb-20 md:pt-40 md:pb-32">
+    <section
+      id="home"
+      className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden"
+      ref={sectionRef}
+    >
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -45,12 +86,10 @@ export default function Hero() {
             </Button>
           </div>
           <div className="flex justify-center gap-6">
-            {/* Replace with your actual links */}
             <Link
               href="https://github.com/oringejooz"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
             >
               <Github className="h-6 w-6" />
               <span className="sr-only">GitHub</span>
@@ -59,15 +98,11 @@ export default function Hero() {
               href="https://www.linkedin.com/in/swarnima-bisht-9a68b024b"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
             >
               <Linkedin className="h-6 w-6" />
               <span className="sr-only">LinkedIn</span>
             </Link>
-            <Link
-              href="mailto:swarnimabisht2403@gmail.com"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
+            <Link href="mailto:swarnimabisht2403@gmail.com" target="_blank">
               <Mail className="h-6 w-6" />
               <span className="sr-only">Email</span>
             </Link>
@@ -75,18 +110,66 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Add a profile image here */}  
-      <div className="absolute bottom-0 right-0 -z-10 opacity-20 dark:opacity-100">
-        <Image 
+      {visible && (
+  <div>
+    <div
+      ref={bubbleRef}
+      className="absolute w-[150px] h-[150px] z-10 cursor-pointer"
+      style={{
+        top: 150,
+        left: "5%",
+      }}
+      onClick={() => {
+        setVisible(false)
+        setTimeout(() => setVisible(true), 3000)
+      }}
+    >
+      <div className="bubble w-full h-full animate-morph overflow-hidden">
+        <Image
           src="/profliepho.jpg"
-          alt="Profile" 
-          width={400} 
-          height={400} 
-          className="rounded-full"
+          alt="Profile Bubble"
+          width={150}
+          height={150}
+          className="object-cover w-full h-full"
         />
       </div>
-      
+    </div>
+
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.6 }}
+      transition={{ delay: 1, duration: 1 }}
+      className="absolute text-sm text-muted-foreground z-10"
+      style={{
+        top: 310,
+        left: "5%",
+      }}
+    >
+    </motion.p>
+  </div>
+)}
+
+
+      <style jsx>{`
+        .bubble {
+          background: linear-gradient(45deg, #88D5BF 0%, #5D6BF8 100%);
+          border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+          animation: morph 8s ease-in-out infinite;
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes morph {
+          0% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+          }
+          50% {
+            border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+          }
+          100% {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+          }
+        }
+      `}</style>
     </section>
   )
 }
-
